@@ -1,0 +1,34 @@
+//@version=5
+indicator("BTC/Gold Breakout Level", overlay=true)
+
+// Input for the breakout ratio and date
+breakoutRatio = input.float(41.07436, "BTC/Gold Breakout Ratio (oz)", minval=0.1)
+breakoutDate = input.time(timestamp("2024-12-17 00:00"), "Breakout Date")
+
+// Get current gold price
+goldPrice = request.security("OANDA:XAUUSD", timeframe.period, close)
+
+// Calculate the dollar price Bitcoin needs to reach
+btcBreakoutPrice = breakoutRatio * goldPrice
+
+// Plot the breakout level with color change after breakout date
+lineColor = time >= breakoutDate ? color.orange : color.new(color.orange, 50)
+plot(btcBreakoutPrice, "BTC Breakout vs Gold", color=lineColor, linewidth=2)
+
+// Info label
+var label infoLabel = na
+if barstate.islast
+    label.delete(infoLabel)
+    labelText = "BTC/Gold Breakout: $" + str.tostring(btcBreakoutPrice, "#,###") + 
+                 "\nGold: $" + str.tostring(goldPrice, "#,###") + 
+                 "\nRatio: " + str.tostring(breakoutRatio, format.mintick) + " oz" +
+                 "\n(ATH: Dec 17, 2024)"
+    infoLabel := label.new(bar_index, btcBreakoutPrice, labelText, 
+                           style=label.style_label_left, 
+                           color=color.new(color.orange, 80), 
+                           textcolor=color.white)
+
+// Alert condition: Bitcoin crosses above the breakout level
+alertcondition(ta.crossover(close, btcBreakoutPrice), 
+               title="BTC Breaks ATH vs Gold", 
+               message="Bitcoin has exceeded 41.07 oz of gold! Current price: {{close}}, Breakout level: {{plot_0}}")
